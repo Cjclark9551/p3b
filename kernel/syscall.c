@@ -17,12 +17,17 @@
 int
 fetchint(struct proc *p, uint addr, int *ip)
 {
-  if(addr >= p->sz || addr+4 > p->sz)
+  if(addr >= p->sz && addr <= proc->stack_sz)
     return -1;
-
+  if(addr+4 > p->sz && addr+4 < p->stack_sz)
+    return -1;
+  if(addr >= USERTOP)
+    return -1;
+  if(addr+4 > USERTOP)
+    return -1;
   if (addr < PGSIZE*2)
     return -1;
-
+//is this all the checking?
   *ip = *(int*)(addr);
   return 0;
 }
@@ -35,17 +40,24 @@ fetchstr(struct proc *p, uint addr, char **pp)
 {
   char *s, *ep;
 
+  if(addr >= p->sz && addr <= proc->stack_sz)
+     return -1;
   if (addr < PGSIZE*2)
 	return -1;
 
-  if(addr >= p->sz)
-    return -1;
   *pp = (char*)addr;
-  ep = (char*)p->sz;
+
+  if(addr < p->sz){
+     ep = (char*)p->sz;
+  }else{
+     ep = (char*)USERTOP;
+  }
+
   for(s = *pp; s < ep; s++)
     if(*s == 0)
       return s - *pp;
   return -1;
+
 }
 
 // Fetch the nth 32-bit system call argument.
@@ -65,9 +77,12 @@ argptr(int n, char **pp, int size)
   
   if(argint(n, &i) < 0)
     return -1;
-  if((uint)i >= proc->sz || (uint)i+size > proc->sz)
+  if((uint)i >= proc->sz && (uint)i < proc->stack_sz)
     return -1;
-  *pp = (char*)i;
+  if((uint)i+size > proc->sz && (uint)i+size < proc->stack_sz)
+    return -1;
+ 
+ *pp = (char*)i;
   return 0;
 }
 

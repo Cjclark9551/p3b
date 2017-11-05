@@ -43,7 +43,10 @@ trap(struct trapframe *tf)
       exit();
     return;
   }
-
+/*  if(tf->trapno == TPGFLT){
+	uinit addr = rcr2();
+	if(addr >= proc->sz 
+  }*/
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpu->id == 0){
