@@ -9,7 +9,6 @@
 int
 exec(char *path, char **argv)
 {
-	cprintf("BEgin exec");
 
   char *s, *last;
   int i, off;

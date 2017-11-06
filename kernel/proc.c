@@ -43,6 +43,7 @@ allocproc(void)
   return 0;
 
 found:
+  p->stack_sz = 0;
   p->state = EMBRYO;
   p->pid = nextpid++;
   release(&ptable.lock);
@@ -91,9 +92,8 @@ userinit(void)
   p->tf->es = p->tf->ds;
   p->tf->ss = p->tf->ds;
   p->tf->eflags = FL_IF;
-cprintf("before stack pointer");
   p->tf->esp = PGSIZE*3;
-cprintf("after the stack pointer");
+cprintf("initcode esp = %x \n", p->tf->esp);
   p->tf->eip = PGSIZE*2;  // beginning of initcode.S
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
@@ -101,7 +101,6 @@ cprintf("after the stack pointer");
 
   p->state = RUNNABLE;
   release(&ptable.lock);
-	cprintf("USERINIT END");
 }
 
 // Grow current process's memory by n bytes.
@@ -110,8 +109,16 @@ int
 growproc(int n)
 {
   uint sz;
-  
+ 
   sz = proc->sz;
+  if(sz <= 0)
+      return -1;
+  // limit growth into the stack
+  if((sz + PGSIZE*5 + n) > proc->stack_sz)
+      return -1;
+//  if(sz + PGSIZE + n > proc->stack_sz)
+  //    return -1;  
+
   if(n > 0){
     if((sz = allocuvm(proc->pgdir, sz, sz + n)) == 0)
       return -1;

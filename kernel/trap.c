@@ -43,10 +43,7 @@ trap(struct trapframe *tf)
       exit();
     return;
   }
-/*  if(tf->trapno == TPGFLT){
-	uinit addr = rcr2();
-	if(addr >= proc->sz 
-  }*/
+
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpu->id == 0){
@@ -58,8 +55,22 @@ trap(struct trapframe *tf)
     lapiceoi();
     break;
   case T_PGFLT:
-    proc->killed = -1;
+//maybe 5
+    if(proc->sz + PGSIZE*5 >= proc->stack_sz)
+       proc->killed = -1;
+    pde_t* pgdir = proc->pgdir;
+    if((rcr2() >= proc->sz) && (rcr2() < proc->stack_sz) && (rcr2() >= proc->stack_sz - PGSIZE)){
+	cprintf("growStack");
+	uint new_stack_sz = allocuvm(pgdir, proc->stack_sz-PGSIZE, proc->stack_sz);
+	if(new_stack_sz == 0){
+		proc->killed = -1;
+	}
+	proc->stack_sz -= PGSIZE;
+    }else{   
+    	proc->killed = -1;
+    }
     break; 
+
   case T_IRQ0 + IRQ_IDE:
     ideintr();
     lapiceoi();
