@@ -41,8 +41,10 @@ int
 fetchstr(struct proc *p, uint addr, char **pp)
 {
   char *s, *ep;
+
   cprintf("addr = %d, stack min = %d, heap max = %d\n", addr, p->stack_sz, p->sz);
-  if(addr > p->sz && addr < proc->stack_sz)
+
+  if(addr >= p->sz && addr <= proc->stack_sz)
      return -1;
   if(addr > USERTOP || addr+1 > USERTOP)
      return -1;
@@ -83,6 +85,8 @@ argptr(int n, char **pp, int size)
   if((uint)i >= proc->sz && (uint)i < proc->stack_sz)
     return -1;
   if((uint)i+size > proc->sz && (uint)i+size < proc->stack_sz)
+    return -1;
+  if(i < PGSIZE*2)
     return -1;
  
  *pp = (char*)i;
